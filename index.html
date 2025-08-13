@@ -402,7 +402,8 @@ Redação para análise:
             const payload = {
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
             };
-            const apiKey = "";
+            // A chave da API fornecida pelo usuário foi adicionada aqui
+            const apiKey = "AIzaSyBZCyIRijGQHupvVA6aPfhS65DFjFHOmFQ";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
             let retries = 0;
