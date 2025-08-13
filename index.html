@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador e Analisador de Redação</title>
+    <!-- Inclui o Tailwind CSS via CDN para um estilo moderno e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Caveat:wght@700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Fundo escuro para um visual mais moderno */
+            background-color: #1f2937;
+            color: #d1d5db; /* Cor do texto padrão mais clara */
+        }
+        /* Estilos para a área de carregamento */
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        /* Estilo para o gradiente do botão principal */
+        .btn-gradient {
+            background-image: linear-gradient(to right, #6366f1, #8b5cf6);
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+        /* Estilo para o gradiente do botão secundário */
+        .btn-secondary {
+            background-image: linear-gradient(to right, #4b5563, #374151);
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(75, 85, 99, 0.4);
+        }
+        .btn-tertiary {
+            background-image: linear-gradient(to right, #10b981, #06b6d4);
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-tertiary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+        /* Estilo do modal pop-up */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #f3f4f6;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            max-width: 28rem;
+            width: 90%;
+        }
+        .font-caveat {
+            font-family: 'Caveat', cursive;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 flex items-center justify-center min-h-screen">
+
+    <!-- Tela Inicial (visível por padrão) -->
+    <div id="introScreen" class="flex flex-col items-center justify-center text-center p-8 transition-all duration-500">
+        <!-- Logotipo -->
+        <div class="mb-4">
+            <svg class="w-24 h-24 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+            </svg>
+        </div>
+        <!-- Título em fonte manuscrita foi adicionado aqui -->
+        <div class="mb-8 -rotate-3">
+            <span class="text-white text-5xl font-caveat font-bold drop-shadow-md">Redação</span>
+        </div>
+        <!-- Título e descrição foram removidos -->
+        <button id="startButton" class="text-white font-bold py-4 px-10 rounded-full shadow-lg text-lg btn-gradient">
+            Começar
+        </button>
+    </div>
+
+    <!-- Aplicativo principal (inicialmente escondido) -->
+    <div id="mainApp" class="hidden bg-gray-50 p-6 sm:p-10 rounded-[2rem] shadow-2xl max-w-4xl w-full flex flex-col lg:flex-row gap-8 lg:gap-12 transition-all duration-300 relative overflow-hidden">
+        
+        <!-- Fundo com formas geométricas -->
+        <div class="absolute inset-0 z-0">
+            <!-- Círculo grande no canto superior esquerdo -->
+            <svg class="absolute top-[-100px] left-[-100px] w-[400px] h-[400px] text-indigo-200 opacity-20 filter blur-3xl" fill="currentColor" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="100" cy="100" r="100"/>
+            </svg>
+            <!-- Círculo pequeno no canto inferior direito -->
+            <svg class="absolute bottom-[-50px] right-[-50px] w-[200px] h-[200px] text-cyan-200 opacity-20 filter blur-2xl" fill="currentColor" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="100" cy="100" r="100"/>
+            </svg>
+        </div>
+
+        <!-- Seção de Controle e Dicas (Esquerda) -->
+        <div class="flex-1 relative z-10">
+            <!-- Logotipo para a tela principal -->
+            <div class="flex items-center gap-3 mb-4">
+                <svg class="w-10 h-10 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                </svg>
+            </div>
+            <!-- Título e descrição foram adicionados aqui -->
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Gerador e Analisador de Redação</h2>
+            <p class="text-gray-600 mb-6">Utilize as ferramentas abaixo para gerar dicas, criar uma redação do zero ou analisar um texto já escrito no padrão ENEM.</p>
+
+            <!-- Campo de entrada do tema com placeholder -->
+            <div class="mb-5">
+                <input type="text" id="topicInput" placeholder="Digite o tema da sua redação aqui..." class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 shadow-sm text-gray-800">
+            </div>
+
+            <!-- Botões de ação -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <button id="generateTipsBtn" class="w-full text-white font-bold py-3 px-6 rounded-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center btn-secondary">
+                    <span id="buttonTextTips">Gerar Dicas</span>
+                    <div id="loadingSpinnerTips" class="loading-spinner hidden ml-3"></div>
+                </button>
+                <button id="generateEssayBtn" class="w-full text-white font-bold py-3 px-6 rounded-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center btn-gradient">
+                    <span id="buttonTextEssay">Gerar Redação</span>
+                    <div id="loadingSpinnerEssay" class="loading-spinner hidden ml-3"></div>
+                </button>
+                 <button id="analyzeEssayBtn" class="w-full text-white font-bold py-3 px-6 rounded-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center btn-tertiary">
+                    <span id="buttonTextAnalyze">Analisar Redação</span>
+                    <div id="loadingSpinnerAnalyze" class="loading-spinner hidden ml-3"></div>
+                </button>
+            </div>
+
+            <!-- Área para exibir as dicas da IA e a análise da redação -->
+            <!-- Fundo do container agora é mais escuro para contraste -->
+            <div id="infoContainer" class="mt-8 bg-gray-100 p-6 rounded-2xl shadow-inner transition-all duration-300 border border-gray-300">
+                <div id="infoContent" class="text-gray-800 leading-relaxed font-normal"></div>
+            </div>
+        </div>
+
+        <!-- Área de escrita da redação (Direita) -->
+        <div class="flex-1 flex flex-col relative z-10">
+            <!-- Título e descrição foram removidos -->
+            <textarea id="essayEditor" class="flex-1 w-full p-4 rounded-xl border-2 border-gray-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 text-lg shadow-sm text-gray-800 min-h-96" placeholder="Escreva sua redação aqui ou clique em 'Gerar Redação' para começar..."></textarea>
+             <!-- Adiciona o contador de palavras abaixo do editor e o novo botão de limpar -->
+            <div class="mt-3 flex justify-between items-center text-sm">
+                <button id="clearEssayBtn" class="px-4 py-2 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300 transition-all duration-200 font-medium">Limpar Redação</button>
+                <span class="text-right text-gray-600">
+                    <span id="wordCount" class="font-bold text-red-500">0</span> / 270
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para a senha de administrador -->
+    <div id="passwordModal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 text-center">Senha de Administrador</h3>
+            <p class="text-gray-600 mb-4 text-center">Por favor, insira a senha para gerar a redação.</p>
+            <input type="password" id="modalPasswordInput" class="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 shadow-sm text-gray-800 mb-4" placeholder="Senha">
+            <p id="passwordError" class="text-red-500 font-medium text-sm mb-4 hidden text-center">Senha incorreta. Tente novamente.</p>
+            <div class="flex justify-end gap-3">
+                <button id="modalCancelBtn" class="px-6 py-2 rounded-xl text-gray-700 bg-gray-200 hover:bg-gray-300 transition-all duration-200 font-medium">Cancelar</button>
+                <button id="modalConfirmBtn" class="px-6 py-2 rounded-xl text-white font-medium btn-gradient">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // O ID do aplicativo é fornecido pelo ambiente, ou um padrão é usado se não estiver disponível.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // A configuração do Firebase é fornecida pelo ambiente.
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        // Referências aos elementos HTML
+        const introScreen = document.getElementById('introScreen');
+        const mainApp = document.getElementById('mainApp');
+        const startButton = document.getElementById('startButton');
+        const topicInput = document.getElementById('topicInput');
+        const generateTipsBtn = document.getElementById('generateTipsBtn');
+        const generateEssayBtn = document.getElementById('generateEssayBtn');
+        const analyzeEssayBtn = document.getElementById('analyzeEssayBtn');
+        const clearEssayBtn = document.getElementById('clearEssayBtn');
+        const infoContainer = document.getElementById('infoContainer');
+        const infoContent = document.getElementById('infoContent');
+        const essayEditor = document.getElementById('essayEditor');
+        const loadingSpinnerTips = document.getElementById('loadingSpinnerTips');
+        const buttonTextTips = document.getElementById('buttonTextTips');
+        const loadingSpinnerEssay = document.getElementById('loadingSpinnerEssay');
+        const buttonTextEssay = document.getElementById('buttonTextEssay');
+        const loadingSpinnerAnalyze = document.getElementById('loadingSpinnerAnalyze');
+        const buttonTextAnalyze = document.getElementById('buttonTextAnalyze');
+        const wordCountSpan = document.getElementById('wordCount');
+        
+        // Referências aos elementos do modal
+        const passwordModal = document.getElementById('passwordModal');
+        const modalPasswordInput = document.getElementById('modalPasswordInput');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+        const passwordError = document.getElementById('passwordError');
+
+        // Adiciona ouvintes de evento
+        startButton.addEventListener('click', () => {
+            introScreen.classList.add('hidden');
+            mainApp.classList.remove('hidden');
+        });
+        generateTipsBtn.addEventListener('click', generateTips);
+        generateEssayBtn.addEventListener('click', openPasswordModal);
+        analyzeEssayBtn.addEventListener('click', analyzeEssay);
+        essayEditor.addEventListener('input', updateWordCount);
+        // Adiciona o ouvinte de evento para o novo botão
+        clearEssayBtn.addEventListener('click', () => {
+            essayEditor.value = '';
+            updateWordCount();
+        });
+
+        // Ouvintes de evento do modal
+        modalCancelBtn.addEventListener('click', closePasswordModal);
+        modalConfirmBtn.addEventListener('click', checkPasswordAndGenerate);
+        modalPasswordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkPasswordAndGenerate();
+            }
+        });
+        
+        const ADMIN_PASSWORD = 'wpm2025';
+
+        function openPasswordModal() {
+            // Exibe o modal e limpa os campos
+            passwordModal.classList.remove('hidden');
+            modalPasswordInput.value = '';
+            passwordError.classList.add('hidden');
+        }
+
+        function closePasswordModal() {
+            // Esconde o modal
+            passwordModal.classList.add('hidden');
+        }
+
+        async function checkPasswordAndGenerate() {
+            const password = modalPasswordInput.value;
+            if (password === ADMIN_PASSWORD) {
+                closePasswordModal();
+                await startEssayGeneration();
+            } else {
+                passwordError.classList.remove('hidden');
+            }
+        }
+        
+        function updateWordCount() {
+            // Conta as palavras no editor de texto. Remove espaços múltiplos.
+            const text = essayEditor.value.trim();
+            const words = text ? text.split(/\s+/).filter(word => word.length > 0) : [];
+            const count = words.length;
+            wordCountSpan.textContent = count;
+
+            // Altera a cor do contador dependendo do número de palavras
+            if (count >= 270) {
+                wordCountSpan.classList.remove('text-red-500');
+                wordCountSpan.classList.add('text-green-500');
+            } else {
+                wordCountSpan.classList.remove('text-green-500');
+                wordCountSpan.classList.add('text-red-500');
+            }
+        }
+
+        /**
+         * Alterna o estado de um botão (habilitado/desabilitado, texto e spinner de carregamento).
+         * @param {HTMLElement} button - O elemento do botão.
+         * @param {HTMLElement} buttonText - O elemento de texto dentro do botão.
+         * @param {HTMLElement} spinner - O elemento do spinner de carregamento.
+         * @param {boolean} isLoading - Se o botão deve estar em estado de carregamento.
+         * @param {string} defaultText - O texto padrão do botão quando não está carregando.
+         */
+        function toggleButtonState(button, buttonText, spinner, isLoading, defaultText) {
+            button.disabled = isLoading;
+            buttonText.textContent = isLoading ? 'Carregando...' : defaultText;
+            if (isLoading) {
+                spinner.classList.remove('hidden');
+            } else {
+                spinner.classList.add('hidden');
+            }
+        }
+
+        async function generateTips() {
+            const topic = topicInput.value.trim();
+            if (!topic) {
+                infoContent.innerHTML = '<span class="text-red-500 font-semibold">Por favor, insira um tema para a redação.</span>';
+                infoContainer.classList.remove('bg-gray-100');
+                infoContainer.classList.add('bg-red-100');
+                return;
+            }
+
+            // Desabilita os botões durante a requisição
+            toggleButtonState(generateTipsBtn, buttonTextTips, loadingSpinnerTips, true, 'Gerar Dicas');
+            toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, true, 'Gerar Redação');
+            toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, true, 'Analisar Redação');
+            
+            infoContent.textContent = '';
+            infoContainer.classList.remove('bg-red-100');
+            infoContainer.classList.add('bg-gray-100');
+
+            // Prompt atualizado para focar no formato e nas competências do ENEM
+            const prompt = `Vamos ajudar um aluno a entender a estrutura da redação do ENEM, com foco em alcançar notas acima de 600. O tema é "${topic}".
+A ideia é explicar cada parte de uma redação (introdução, desenvolvimento e conclusão) e dar um exemplo prático de parágrafo para cada uma delas, seguindo as competências do ENEM.
+* **Exemplo para o tema:**
+
+**1. A Introdução (Competência 2)**
+A introdução é o primeiro parágrafo. Nela, você deve apresentar o tema e sua tese (a sua opinião sobre o assunto). O objetivo é contextualizar o leitor e já indicar o caminho que sua argumentação irá seguir.
+* **Exemplo para o tema:**
+
+**2. O Desenvolvimento (Competências 2 e 3)**
+O desenvolvimento consiste em pelo menos dois parágrafos. Cada parágrafo deve explorar um argumento diferente que sustente a sua tese. É o momento de aprofundar suas ideias, usando exemplos, dados, citações e referências de outras áreas do conhecimento.
+* **Exemplo para o tema:**
+
+**3. A Conclusão (Competência 5)**
+A conclusão é o último parágrafo, e é onde você deve retomar sua tese e, principalmente, apresentar uma proposta de intervenção social. Esta proposta deve ser detalhada, mostrando quem fará o que, como fará e para qual finalidade, de forma a solucionar o problema discutido.
+* **Exemplo para o tema:**
+
+Lembre-se de usar uma linguagem muito clara e encorajadora. A ideia é fazer o aluno se sentir seguro para começar a escrever, sem medo.`;
+
+            await callGeminiApi(prompt, 'tips');
+            
+            // Habilita os botões novamente
+            toggleButtonState(generateTipsBtn, buttonTextTips, loadingSpinnerTips, false, 'Gerar Dicas');
+            toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, false, 'Gerar Redação');
+            toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, false, 'Analisar Redação');
+        }
+
+        async function startEssayGeneration() {
+            const topic = topicInput.value.trim();
+
+            if (!topic) {
+                // Alerta suave para o usuário se o campo de tema estiver vazio
+                infoContent.innerHTML = '<span class="text-red-500 font-semibold">Por favor, insira um tema para a redação.</span>';
+                infoContainer.classList.remove('bg-gray-100');
+                infoContainer.classList.add('bg-red-100');
+                return;
+            }
+
+            // Desabilita os botões durante a requisição
+            toggleButtonState(generateTipsBtn, buttonTextTips, loadingSpinnerTips, true, 'Gerar Dicas');
+            toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, true, 'Gerar Redação');
+            toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, true, 'Analisar Redação');
+
+            essayEditor.value = ''; // Limpa o editor antes de gerar nova redação
+            updateWordCount(); // Reseta o contador
+            
+            // Prompt atualizado para gerar redação no formato ENEM com proposta de intervenção
+            const prompt = `Escreva uma redação completa e original no formato do Exame Nacional do Ensino Médio (ENEM) sobre o tema: '${topic}'. A redação deve ser dissertativa-argumentativa, ter no mínimo 270 palavras, ser bem estruturada em introdução, desenvolvimento (com pelo menos dois parágrafos robustos) e conclusão, e conter uma proposta de intervenção detalhada, visando uma nota acima de 600 pontos. Use um tom humanizado e argumentos sólidos.`;
+
+            await callGeminiApi(prompt, 'essay');
+
+            // Habilita os botões novamente
+            toggleButtonState(generateTipsBtn, buttonTextTips, loadingSpinnerTips, false, 'Gerar Dicas');
+            toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, false, 'Gerar Redação');
+            toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, false, 'Analisar Redação');
+        }
+        
+        async function analyzeEssay() {
+            const essay = essayEditor.value.trim();
+            if (!essay) {
+                infoContent.innerHTML = '<span class="text-red-500 font-semibold">Por favor, escreva ou gere uma redação para analisá-la.</span>';
+                infoContainer.classList.remove('bg-gray-100');
+                infoContainer.classList.add('bg-red-100');
+                return;
+            }
+            
+            // Desabilita os botões durante a requisição
+            toggleButtonState(generateTipsBtn, buttonTextTips, loadingSpinnerTips, true, 'Gerar Dicas');
+            toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, true, 'Gerar Redação');
+            toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, true, 'Analisar Redação');
+            
+            infoContent.textContent = '';
+            infoContainer.classList.remove('bg-red-100');
+            infoContainer.classList.add('bg-gray-100');
+
+            // Prompt detalhado para análise de redação no formato ENEM, competência por competência
+            const prompt = `Avalie a seguinte redação no formato ENEM, fornecendo uma nota de 0 a 200 para cada uma das cinco competências. No final, dê uma nota final e um resumo das sugestões para melhoria. A análise deve ser detalhada, focando em pontos fortes e fracos em cada competência.
+
+Competências a serem avaliadas:
+1. **Competência 1:** Demonstrar domínio da modalidade escrita formal da língua portuguesa.
+2. **Competência 2:** Compreender a proposta de redação e aplicar conceitos das várias áreas de conhecimento para desenvolver o tema, dentro dos limites estruturais do texto dissertativo-argumentativo.
+3. **Competência 3:** Selecionar, relacionar, organizar e interpretar informações, fatos, opiniões e argumentos em defesa de um ponto de vista.
+4. **Competência 4:** Demonstrar conhecimento dos mecanismos linguísticos necessários para a construção da argumentação.
+5. **Competência 5:** Elaborar proposta de intervenção para o problema abordado, respeitando os direitos humanos.
+
+Redação para análise:
+"${essay}"`;
+
+            await callGeminiApi(prompt, 'analysis');
+
+            // Habilita os botões novamente
+            toggleButtonState(generateTipsBtn, buttonTextTips, loadingSpinnerTips, false, 'Gerar Dicas');
+            toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, false, 'Gerar Redação');
+            toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, false, 'Analisar Redação');
+        }
+
+        async function callGeminiApi(prompt, type) {
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+            };
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            let retries = 0;
+            const maxRetries = 5;
+            const delay = 1000;
+
+            async function makeApiCall() {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 429 && retries < maxRetries) {
+                            await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, retries)));
+                            retries++;
+                            return makeApiCall();
+                        }
+                        throw new Error(`Erro na API: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        if (type === 'essay') {
+                            essayEditor.value = text;
+                            updateWordCount();
+                        } else {
+                            infoContent.innerHTML = formatMarkdownToHtml(text);
+                        }
+                    } else {
+                        if (type === 'essay') {
+                            essayEditor.value = 'Não foi possível gerar a redação. Tente novamente com um tema diferente.';
+                        } else {
+                            infoContent.innerHTML = '<span class="text-red-500 font-semibold">Não foi possível gerar dicas ou análise. Tente novamente.</span>';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erro ao chamar a API do Gemini:', error);
+                    if (type === 'essay') {
+                        essayEditor.value = `Ocorreu um erro: ${error.message}`;
+                    } else {
+                        infoContent.innerHTML = `<span class="text-red-500 font-semibold">Ocorreu um erro: ${error.message}</span>`;
+                    }
+                }
+            }
+            return makeApiCall();
+        }
+
+        // Função para converter o Markdown básico da resposta da IA para HTML
+        function formatMarkdownToHtml(markdownText) {
+            let html = markdownText;
+            // Converte títulos Markdown para HTML
+            html = html.replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold mt-4 mb-2 text-gray-800">$1</h3>');
+            html = html.replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold mt-6 mb-3 text-gray-800">$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold mt-8 mb-4 text-gray-800">$1</h1>');
+            // Converte listas com traços
+            html = html.replace(/^- (.*$)/gim, '<li class="ml-4 list-disc text-gray-800">$1</li>');
+            // Converte listas numeradas
+            html = html.replace(/^\d+\. (.*$)/gim, '<li class="ml-4 list-decimal text-gray-800">$1</li>');
+            // Converte negrito
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // Converte itálico
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            // Adiciona parágrafos para o texto restante
+            html = html.split('\n').map(line => {
+                if (line.trim() === '' || line.startsWith('<h') || line.startsWith('<li')) {
+                    return line;
+                }
+                return `<p class="mb-2 text-gray-800">${line}</p>`;
+            }).join('');
+            return html;
+        }
+    </script>
+</body>
+</html>
