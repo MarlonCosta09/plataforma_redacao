@@ -92,7 +92,6 @@
         <div class="mb-8 -rotate-3">
             <span class="text-white text-5xl font-caveat font-bold drop-shadow-md">Redação</span>
         </div>
-        <!-- Título e descrição foram removidos -->
         <button id="startButton" class="text-white font-bold py-4 px-10 rounded-full shadow-lg text-lg btn-gradient">
             Começar
         </button>
@@ -121,7 +120,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                 </svg>
             </div>
-            <!-- Título e descrição foram adicionados aqui -->
+            <!-- Título e descrição da página principal -->
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Gerador e Analisador de Redação</h2>
             <p class="text-gray-600 mb-6">Utilize as ferramentas abaixo para gerar dicas, criar uma redação do zero ou analisar um texto já escrito no padrão ENEM.</p>
 
@@ -147,7 +146,6 @@
             </div>
 
             <!-- Área para exibir as dicas da IA e a análise da redação -->
-            <!-- Fundo do container agora é mais escuro para contraste -->
             <div id="infoContainer" class="mt-8 bg-gray-100 p-6 rounded-2xl shadow-inner transition-all duration-300 border border-gray-300">
                 <div id="infoContent" class="text-gray-800 leading-relaxed font-normal"></div>
             </div>
@@ -155,7 +153,6 @@
 
         <!-- Área de escrita da redação (Direita) -->
         <div class="flex-1 flex flex-col relative z-10">
-            <!-- Título e descrição foram removidos -->
             <textarea id="essayEditor" class="flex-1 w-full p-4 rounded-xl border-2 border-gray-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 text-lg shadow-sm text-gray-800 min-h-96" placeholder="Escreva sua redação aqui ou clique em 'Gerar Redação' para começar..."></textarea>
              <!-- Adiciona o contador de palavras abaixo do editor e o novo botão de limpar -->
             <div class="mt-3 flex justify-between items-center text-sm">
@@ -335,11 +332,6 @@ A conclusão é o último parágrafo, e é onde você deve retomar sua tese e, p
 Lembre-se de usar uma linguagem muito clara e encorajadora. A ideia é fazer o aluno se sentir seguro para começar a escrever, sem medo.`;
 
             await callGeminiApi(prompt, 'tips');
-            
-            // Habilita os botões novamente
-            toggleButtonState(generateTipsBtn, buttonTextTips, loadingSpinnerTips, false, 'Gerar Dicas');
-            toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, false, 'Gerar Redação');
-            toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, false, 'Analisar Redação');
         }
 
         async function startEssayGeneration() {
@@ -365,11 +357,6 @@ Lembre-se de usar uma linguagem muito clara e encorajadora. A ideia é fazer o a
             const prompt = `Escreva uma redação completa e original no formato do Exame Nacional do Ensino Médio (ENEM) sobre o tema: '${topic}'. A redação deve ser dissertativa-argumentativa, ter no mínimo 270 palavras, ser bem estruturada em introdução, desenvolvimento (com pelo menos dois parágrafos robustos) e conclusão, e conter uma proposta de intervenção detalhada, visando uma nota acima de 600 pontos. Use um tom humanizado e argumentos sólidos.`;
 
             await callGeminiApi(prompt, 'essay');
-
-            // Habilita os botões novamente
-            toggleButtonState(generateTipsBtn, buttonTextTips, loadingSpinnerTips, false, 'Gerar Dicas');
-            toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, false, 'Gerar Redação');
-            toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, false, 'Analisar Redação');
         }
         
         async function analyzeEssay() {
@@ -404,13 +391,13 @@ Redação para análise:
 "${essay}"`;
 
             await callGeminiApi(prompt, 'analysis');
-
-            // Habilita os botões novamente
-            toggleButtonState(generateTipsBtn, buttonTextTips, loadingSpinnerTips, false, 'Gerar Dicas');
-            toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, false, 'Gerar Redação');
-            toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, false, 'Analisar Redação');
         }
 
+        /**
+         * Função principal para chamar a API do Gemini com tratamento de erro e retentativas.
+         * @param {string} prompt - O prompt de texto para a API.
+         * @param {string} type - O tipo de chamada ('tips', 'essay' ou 'analysis').
+         */
         async function callGeminiApi(prompt, type) {
             const payload = {
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -424,6 +411,9 @@ Redação para análise:
 
             async function makeApiCall() {
                 try {
+                    // Log para depuração
+                    console.log(`Chamando a API para ${type} com o prompt:`, prompt);
+
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -431,19 +421,26 @@ Redação para análise:
                     });
 
                     if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error(`Erro na API (Status: ${response.status}):`, errorData);
+                        
                         if (response.status === 429 && retries < maxRetries) {
+                            console.log(`Retentando em ${delay * Math.pow(2, retries)}ms...`);
                             await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, retries)));
                             retries++;
                             return makeApiCall();
                         }
-                        throw new Error(`Erro na API: ${response.statusText}`);
+                        
+                        // Lança um erro com a mensagem da API para ser capturado no catch
+                        throw new Error(`Erro na API: ${errorData.error.message || response.statusText}`);
                     }
 
                     const result = await response.json();
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        const text = result.candidates[0].content.parts[0].text;
+                    
+                    // Verifica se a resposta tem o formato esperado
+                    const contentPart = result?.candidates?.[0]?.content?.parts?.[0];
+                    if (contentPart?.text) {
+                        const text = contentPart.text;
                         if (type === 'essay') {
                             essayEditor.value = text;
                             updateWordCount();
@@ -451,19 +448,28 @@ Redação para análise:
                             infoContent.innerHTML = formatMarkdownToHtml(text);
                         }
                     } else {
+                        // Resposta vazia ou malformada
+                        console.error('Resposta da API está vazia ou malformada:', result);
+                        const errorMessage = `Não foi possível ${type === 'essay' ? 'gerar a redação' : 'obter dicas ou análise'}. A resposta da API está vazia.`;
                         if (type === 'essay') {
-                            essayEditor.value = 'Não foi possível gerar a redação. Tente novamente com um tema diferente.';
+                            essayEditor.value = errorMessage;
                         } else {
-                            infoContent.innerHTML = '<span class="text-red-500 font-semibold">Não foi possível gerar dicas ou análise. Tente novamente.</span>';
+                            infoContent.innerHTML = `<span class="text-red-500 font-semibold">${errorMessage}</span>`;
                         }
                     }
                 } catch (error) {
-                    console.error('Erro ao chamar a API do Gemini:', error);
+                    console.error('Ocorreu um erro na chamada da API:', error);
+                    const userErrorMessage = `Ocorreu um erro ao ${type === 'essay' ? 'gerar a redação' : 'obter dicas ou análise'}: ${error.message}`;
                     if (type === 'essay') {
-                        essayEditor.value = `Ocorreu um erro: ${error.message}`;
+                        essayEditor.value = userErrorMessage;
                     } else {
-                        infoContent.innerHTML = `<span class="text-red-500 font-semibold">Ocorreu um erro: ${error.message}</span>`;
+                        infoContent.innerHTML = `<span class="text-red-500 font-semibold">${userErrorMessage}</span>`;
                     }
+                } finally {
+                    // Garante que os botões voltem ao estado normal após a requisição
+                    toggleButtonState(generateTipsBtn, buttonTextTips, loadingSpinnerTips, false, 'Gerar Dicas');
+                    toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, false, 'Gerar Redação');
+                    toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, false, 'Analisar Redação');
                 }
             }
             return makeApiCall();
