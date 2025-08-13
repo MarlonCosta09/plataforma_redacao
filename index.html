@@ -179,10 +179,10 @@
     </div>
 
     <script>
-        // O ID do aplicativo é fornecido pelo ambiente, ou um padrão é usado se não estiver disponível.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        // A configuração do Firebase é fornecida pelo ambiente.
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // A CHAVE DA API FOI ATUALIZADA PARA SER PASSADA DIRETAMENTE NA CHAMADA
+        const GEMINI_API_KEY = "AIzaSyBZCyIRijGQHupvVA6aPfhS65DFjFHOmFQ";
+        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent`;
+        const ADMIN_PASSWORD = 'wpm2025';
 
         // Referências aos elementos HTML
         const introScreen = document.getElementById('introScreen');
@@ -235,8 +235,6 @@
             }
         });
         
-        const ADMIN_PASSWORD = 'wpm2025';
-
         function openPasswordModal() {
             // Exibe o modal e limpa os campos
             passwordModal.classList.remove('hidden');
@@ -402,9 +400,6 @@ Redação para análise:
             const payload = {
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
             };
-            // A chave da API fornecida pelo usuário foi adicionada aqui
-            const apiKey = "AIzaSyBZCyIRijGQHupvVA6aPfhS65DFjFHOmFQ";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
             let retries = 0;
             const maxRetries = 5;
@@ -415,9 +410,13 @@ Redação para análise:
                     // Log para depuração
                     console.log(`Chamando a API para ${type} com o prompt:`, prompt);
 
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch(GEMINI_API_URL, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            // Chave da API agora é enviada no cabeçalho
+                            'x-goog-api-key': GEMINI_API_KEY
+                        },
                         body: JSON.stringify(payload)
                     });
 
@@ -432,13 +431,11 @@ Redação para análise:
                             return makeApiCall();
                         }
                         
-                        // Lança um erro com a mensagem da API para ser capturado no catch
                         throw new Error(`Erro na API: ${errorData.error.message || response.statusText}`);
                     }
 
                     const result = await response.json();
                     
-                    // Verifica se a resposta tem o formato esperado
                     const contentPart = result?.candidates?.[0]?.content?.parts?.[0];
                     if (contentPart?.text) {
                         const text = contentPart.text;
@@ -449,7 +446,6 @@ Redação para análise:
                             infoContent.innerHTML = formatMarkdownToHtml(text);
                         }
                     } else {
-                        // Resposta vazia ou malformada
                         console.error('Resposta da API está vazia ou malformada:', result);
                         const errorMessage = `Não foi possível ${type === 'essay' ? 'gerar a redação' : 'obter dicas ou análise'}. A resposta da API está vazia.`;
                         if (type === 'essay') {
@@ -460,14 +456,13 @@ Redação para análise:
                     }
                 } catch (error) {
                     console.error('Ocorreu um erro na chamada da API:', error);
-                    const userErrorMessage = `Ocorreu um erro ao ${type === 'essay' ? 'gerar a redação' : 'obter dicas ou análise'}: ${error.message}`;
+                    const userErrorMessage = `Ocorreu um erro ao ${type === 'essay' ? 'gerar a redação' : 'obter dicas ou análise'}: ${error.message}. Por favor, verifique se a chave da API está correta e com as permissões devidas.`;
                     if (type === 'essay') {
                         essayEditor.value = userErrorMessage;
                     } else {
                         infoContent.innerHTML = `<span class="text-red-500 font-semibold">${userErrorMessage}</span>`;
                     }
                 } finally {
-                    // Garante que os botões voltem ao estado normal após a requisição
                     toggleButtonState(generateTipsBtn, buttonTextTips, loadingSpinnerTips, false, 'Gerar Dicas');
                     toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, false, 'Gerar Redação');
                     toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, false, 'Analisar Redação');
