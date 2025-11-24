@@ -76,6 +76,15 @@
         .font-caveat {
             font-family: 'Caveat', cursive;
         }
+        
+        /* Estilos para o conteúdo formatado (dicas e análise) */
+        #infoContent strong {
+            color: #4f46e5; /* Cor indigo para negritos */
+        }
+        #infoContent h3 {
+            border-bottom: 2px solid #e0e7ff; /* Linha sutil para subtítulos */
+            padding-bottom: 0.5rem;
+        }
     </style>
 </head>
 <body class="p-4 sm:p-8 flex items-center justify-center min-h-screen">
@@ -179,9 +188,9 @@
     </div>
 
     <script>
-        // A CHAVE DA API FOI ATUALIZADA PARA SER PASSADA DIRETAMENTE NA CHAMADA
-        const GEMINI_API_KEY = "AIzaSyDc1PX50gVPrupjm2VMIiojyDYfhee4NEo";
-        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent`;
+        // Configurações da API atualizadas conforme as melhores práticas
+        const API_KEY = "AIzaSyDc1PX50gVPrupjm2VMIiojyDYfhee4NEo"; // CHAVE DE API INSERIDA AQUI
+        const MODEL_NAME = 'gemini-2.5-flash-preview-09-2025';
         const ADMIN_PASSWORD = 'wpm2025';
 
         // Referências aos elementos HTML
@@ -223,6 +232,9 @@
         // Adiciona o ouvinte de evento para o novo botão
         clearEssayBtn.addEventListener('click', () => {
             essayEditor.value = '';
+            infoContent.innerHTML = '';
+            infoContainer.classList.remove('bg-red-100');
+            infoContainer.classList.add('bg-gray-100');
             updateWordCount();
         });
 
@@ -306,28 +318,19 @@
             toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, true, 'Gerar Redação');
             toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, true, 'Analisar Redação');
             
-            infoContent.textContent = '';
+            infoContent.textContent = 'Gerando dicas para o tema: ' + topic + '...';
             infoContainer.classList.remove('bg-red-100');
             infoContainer.classList.add('bg-gray-100');
 
             // Prompt atualizado para focar no formato e nas competências do ENEM
-            const prompt = `Vamos ajudar um aluno a entender a estrutura da redação do ENEM, com foco em alcançar notas acima de 600. O tema é "${topic}".
-A ideia é explicar cada parte de uma redação (introdução, desenvolvimento e conclusão) e dar um exemplo prático de parágrafo para cada uma delas, seguindo as competências do ENEM.
-* **Exemplo para o tema:**
+            const prompt = `Gere um guia de planejamento de redação ENEM (nota 600+) para o tema: "${topic}".
+A resposta deve ser estruturada em 3 partes, usando Markdown e focando nas competências do ENEM.
 
-**1. A Introdução (Competência 2)**
-A introdução é o primeiro parágrafo. Nela, você deve apresentar o tema e sua tese (a sua opinião sobre o assunto). O objetivo é contextualizar o leitor e já indicar o caminho que sua argumentação irá seguir.
-* **Exemplo para o tema:**
+1. **Tese e Argumentos (C2 e C3):** Sugira 1 tese clara e 2 eixos argumentativos (um para cada parágrafo de desenvolvimento) que sustentem essa tese.
+2. **Repertório Sociocultural (C2):** Sugira 2 a 3 repertórios socioculturais válidos para o tema (como filósofos, sociólogos, filmes, leis, etc.), explicando brevemente como eles se conectam aos argumentos.
+3. **Proposta de Intervenção (C5):** Estruture uma Proposta de Intervenção completa (Agente, Ação, Meio, Finalidade e Detalhamento) que resolva o problema central do tema.
 
-**2. O Desenvolvimento (Competências 2 e 3)**
-O desenvolvimento consiste em pelo menos dois parágrafos. Cada parágrafo deve explorar um argumento diferente que sustente a sua tese. É o momento de aprofundar suas ideias, usando exemplos, dados, citações e referências de outras áreas do conhecimento.
-* **Exemplo para o tema:**
-
-**3. A Conclusão (Competência 5)**
-A conclusão é o último parágrafo, e é onde você deve retomar sua tese e, principalmente, apresentar uma proposta de intervenção social. Esta proposta deve ser detalhada, mostrando quem fará o que, como fará e para qual finalidade, de forma a solucionar o problema discutido.
-* **Exemplo para o tema:**
-
-Lembre-se de usar uma linguagem muito clara e encorajadora. A ideia é fazer o aluno se sentir seguro para começar a escrever, sem medo.`;
+Use linguagem motivacional e clara.`;
 
             await callGeminiApi(prompt, 'tips');
         }
@@ -348,11 +351,11 @@ Lembre-se de usar uma linguagem muito clara e encorajadora. A ideia é fazer o a
             toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, true, 'Gerar Redação');
             toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, true, 'Analisar Redação');
 
-            essayEditor.value = ''; // Limpa o editor antes de gerar nova redação
+            essayEditor.value = 'Gerando redação sobre o tema: ' + topic + '...'; // Mensagem de carregamento no editor
             updateWordCount(); // Reseta o contador
             
-            // Prompt atualizado para gerar redação no formato ENEM com proposta de intervenção
-            const prompt = `Escreva uma redação completa e original no formato do Exame Nacional do Ensino Médio (ENEM) sobre o tema: '${topic}'. A redação deve ser dissertativa-argumentativa, ter no mínimo 270 palavras, ser bem estruturada em introdução, desenvolvimento (com pelo menos dois parágrafos robustos) e conclusão, e conter uma proposta de intervenção detalhada, visando uma nota acima de 600 pontos. Use um tom humanizado e argumentos sólidos.`;
+            // Prompt atualizado para gerar redação no formato ENEM com proposta de intervenção e limite de palavras
+            const prompt = `Escreva uma redação completa e original no formato do Exame Nacional do Ensino Médio (ENEM) sobre o tema: '${topic}'. A redação deve ser dissertativa-argumentativa, ter entre 270 e 300 palavras (para simular o espaço da prova), ser bem estruturada em 4 parágrafos (introdução, dois desenvolvimentos robustos e conclusão), e conter uma proposta de intervenção detalhada, visando nota máxima (1000). Use um tom formal e utilize repertórios socioculturais válidos.`;
 
             await callGeminiApi(prompt, 'essay');
         }
@@ -371,19 +374,26 @@ Lembre-se de usar uma linguagem muito clara e encorajadora. A ideia é fazer o a
             toggleButtonState(generateEssayBtn, buttonTextEssay, loadingSpinnerEssay, true, 'Gerar Redação');
             toggleButtonState(analyzeEssayBtn, buttonTextAnalyze, loadingSpinnerAnalyze, true, 'Analisar Redação');
             
-            infoContent.textContent = '';
+            infoContent.textContent = 'Analisando redação. Por favor, aguarde...';
             infoContainer.classList.remove('bg-red-100');
             infoContainer.classList.add('bg-gray-100');
 
             // Prompt detalhado para análise de redação no formato ENEM, competência por competência
-            const prompt = `Avalie a seguinte redação no formato ENEM, fornecendo uma nota de 0 a 200 para cada uma das cinco competências. No final, dê uma nota final e um resumo das sugestões para melhoria. A análise deve ser detalhada, focando em pontos fortes e fracos em cada competência.
+            const prompt = `Você é um corretor especialista do ENEM. Avalie a seguinte redação.
+Sua análise deve conter:
+1. Uma **nota de 0 a 200** para cada uma das cinco competências do ENEM.
+2. Um **resumo dos pontos fortes** da redação.
+3. Um **resumo detalhado das sugestões** de melhoria, separadas por competência (C1, C2, C3, C4, C5).
+4. Uma **Nota Final** (soma das 5 competências).
 
-Competências a serem avaliadas:
-1. **Competência 1:** Demonstrar domínio da modalidade escrita formal da língua portuguesa.
-2. **Competência 2:** Compreender a proposta de redação e aplicar conceitos das várias áreas de conhecimento para desenvolver o tema, dentro dos limites estruturais do texto dissertativo-argumentativo.
-3. **Competência 3:** Selecionar, relacionar, organizar e interpretar informações, fatos, opiniões e argumentos em defesa de um ponto de vista.
-4. **Competência 4:** Demonstrar conhecimento dos mecanismos linguísticos necessários para a construção da argumentação.
-5. **Competência 5:** Elaborar proposta de intervenção para o problema abordado, respeitando os direitos humanos.
+Use Markdown para formatar a resposta.
+
+Competências:
+C1. Domínio da norma padrão.
+C2. Compreensão do tema, formato dissertativo-argumentativo e uso de repertório sociocultural.
+C3. Organização e argumentação do ponto de vista.
+C4. Conhecimento dos mecanismos linguísticos (conectivos e coesão).
+C5. Proposta de intervenção completa.
 
 Redação para análise:
 "${essay}"`;
@@ -392,46 +402,42 @@ Redação para análise:
         }
 
         /**
-         * Função principal para chamar a API do Gemini com tratamento de erro e retentativas.
+         * Função principal para chamar a API do Gemini com tratamento de erro e retentativas (Exponential Backoff).
          * @param {string} prompt - O prompt de texto para a API.
          * @param {string} type - O tipo de chamada ('tips', 'essay' ou 'analysis').
          */
         async function callGeminiApi(prompt, type) {
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
+            
             const payload = {
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
             };
 
             let retries = 0;
             const maxRetries = 5;
-            const delay = 1000;
 
             async function makeApiCall() {
                 try {
-                    // Log para depuração
-                    console.log(`Chamando a API para ${type} com o prompt:`, prompt);
-
-                    const response = await fetch(GEMINI_API_URL, {
+                    const response = await fetch(API_URL, {
                         method: 'POST',
                         headers: { 
-                            'Content-Type': 'application/json',
-                            // Chave da API agora é enviada no cabeçalho
-                            'x-goog-api-key': GEMINI_API_KEY
+                            'Content-Type': 'application/json'
                         },
                         body: JSON.stringify(payload)
                     });
 
                     if (!response.ok) {
-                        const errorData = await response.json();
-                        console.error(`Erro na API (Status: ${response.status}):`, errorData);
+                        const errorData = await response.json().catch(() => ({}));
                         
                         if (response.status === 429 && retries < maxRetries) {
-                            console.log(`Retentando em ${delay * Math.pow(2, retries)}ms...`);
-                            await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, retries)));
+                            const delay = 1000 * Math.pow(2, retries);
+                            // console.log(`Retentando em ${delay}ms...`); // Desativado para aderir ao "Do not log these retries"
+                            await new Promise(resolve => setTimeout(resolve, delay));
                             retries++;
-                            return makeApiCall();
+                            return makeApiCall(); // Recursão para retentar
                         }
                         
-                        throw new Error(`Erro na API: ${errorData.error.message || response.statusText}`);
+                        throw new Error(`Erro na API (Status: ${response.status}): ${errorData.error?.message || response.statusText || 'Erro desconhecido.'}`);
                     }
 
                     const result = await response.json();
@@ -447,7 +453,7 @@ Redação para análise:
                         }
                     } else {
                         console.error('Resposta da API está vazia ou malformada:', result);
-                        const errorMessage = `Não foi possível ${type === 'essay' ? 'gerar a redação' : 'obter dicas ou análise'}. A resposta da API está vazia.`;
+                        const errorMessage = `Não foi possível ${type === 'essay' ? 'gerar a redação' : 'obter dicas ou análise'}. A resposta da IA está incompleta.`;
                         if (type === 'essay') {
                             essayEditor.value = errorMessage;
                         } else {
@@ -456,7 +462,7 @@ Redação para análise:
                     }
                 } catch (error) {
                     console.error('Ocorreu um erro na chamada da API:', error);
-                    const userErrorMessage = `Ocorreu um erro ao ${type === 'essay' ? 'gerar a redação' : 'obter dicas ou análise'}: ${error.message}. Por favor, verifique se a chave da API está correta e com as permissões devidas.`;
+                    const userErrorMessage = `Erro: Falha ao comunicar com a IA. Verifique se o Canvas está ativo.`;
                     if (type === 'essay') {
                         essayEditor.value = userErrorMessage;
                     } else {
@@ -474,29 +480,45 @@ Redação para análise:
         // Função para converter o Markdown básico da resposta da IA para HTML
         function formatMarkdownToHtml(markdownText) {
             let html = markdownText;
-            // Converte títulos Markdown para HTML
+            
+            // Remove quebras de linha que possam interferir na regex de bloco
+            html = html.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+            // 1. Converte títulos Markdown para HTML
             html = html.replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold mt-4 mb-2 text-gray-800">$1</h3>');
             html = html.replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold mt-6 mb-3 text-gray-800">$1</h2>');
             html = html.replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold mt-8 mb-4 text-gray-800">$1</h1>');
-            // Converte listas com traços
-            html = html.replace(/^- (.*$)/gim, '<li class="ml-4 list-disc text-gray-800">$1</li>');
-            // Converte listas numeradas
-            html = html.replace(/^\d+\. (.*$)/gim, '<li class="ml-4 list-decimal text-gray-800">$1</li>');
-            // Converte negrito
+            
+            // 2. Converte listas (antes de parágrafos)
+            html = html.replace(/^- (.*$)/gim, '<li class="ml-4 list-disc text-gray-700">$1</li>');
+            html = html.replace(/^\* (.*$)/gim, '<li class="ml-4 list-disc text-gray-700">$1</li>');
+            html = html.replace(/^(\d+\.) (.*$)/gim, '<li class="ml-4 list-decimal text-gray-700">$2</li>');
+            
+            // 3. Converte negrito e itálico
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            // Converte itálico
             html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-            // Adiciona parágrafos para o texto restante
+            
+            // 4. Adiciona parágrafos para o texto restante
             html = html.split('\n').map(line => {
-                if (line.trim() === '' || line.startsWith('<h') || line.startsWith('<li')) {
+                const trimmedLine = line.trim();
+                // Verifica se a linha não está vazia e não é o início de uma tag de bloco (h1, h2, h3, li, ul, ol, table, p, etc.)
+                if (trimmedLine === '' || trimmedLine.startsWith('<h') || trimmedLine.startsWith('<li') || trimmedLine.startsWith('<ul') || trimmedLine.startsWith('<ol') || trimmedLine.startsWith('<p')) {
                     return line;
                 }
-                return `<p class="mb-2 text-gray-800">${line}</p>`;
+                return `<p class="mb-2 text-gray-700">${line}</p>`;
             }).join('');
+
+            // Adiciona wrappers para listas (simples, mas funcional)
+            html = html.replace(/<li(.*?)<\/li>/gs, (match) => {
+                if (!match.startsWith('<ul') && !match.startsWith('<ol')) {
+                    return `<ul>${match}</ul>`;
+                }
+                return match;
+            });
+            html = html.replace(/<\/ul>\s*<ul>/g, ''); // Junta listas contínuas
+            
             return html;
         }
     </script>
 </body>
 </html>
-
-
