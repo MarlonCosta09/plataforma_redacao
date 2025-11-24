@@ -190,7 +190,8 @@
     <script>
         // Configurações da API atualizadas conforme as melhores práticas
         const API_KEY = "AIzaSyDc1PX50gVPrupjm2VMIiojyDYfhee4NEo"; // CHAVE DE API INSERIDA AQUI
-        const MODEL_NAME = 'gemini-2.5-flash-preview-09-2025';
+        // MODELO CORRIGIDO: gemini-2.5-flash
+        const MODEL_NAME = 'gemini-2.5-flash'; 
         const ADMIN_PASSWORD = 'wpm2025';
 
         // Referências aos elementos HTML
@@ -437,7 +438,8 @@ Redação para análise:
                             return makeApiCall(); // Recursão para retentar
                         }
                         
-                        throw new Error(`Erro na API (Status: ${response.status}): ${errorData.error?.message || response.statusText || 'Erro desconhecido.'}`);
+                        // Retorna erro específico da API
+                        throw new Error(`API: ${errorData.error?.message || response.statusText || 'Erro desconhecido.'}`);
                     }
 
                     const result = await response.json();
@@ -462,7 +464,8 @@ Redação para análise:
                     }
                 } catch (error) {
                     console.error('Ocorreu um erro na chamada da API:', error);
-                    const userErrorMessage = `Erro: Falha ao comunicar com a IA. Verifique se o Canvas está ativo.`;
+                    // Aqui eu incluí a mensagem de erro original para o usuário
+                    const userErrorMessage = `Ocorreu um erro ao ${type === 'essay' ? 'gerar a redação' : 'obter dicas ou análise'}: ${error.message}. Por favor, verifique se a chave da API está correta e se o modelo está acessível.`;
                     if (type === 'essay') {
                         essayEditor.value = userErrorMessage;
                     } else {
